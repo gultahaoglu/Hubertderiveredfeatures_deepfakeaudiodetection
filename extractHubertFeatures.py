@@ -60,7 +60,6 @@ class ASVspoof2019(Dataset):
             all_info = all_info[: (2580 if access_type == "LA" else 5400)]
         self.all_info = all_info
 
-        # ---------------- label maps --------------
         self.tag = {"-": 0, **{f"A{i:02d}": i for i in range(1, 20)}} if access_type == "LA" else {
             "-": 0,
             "AA": 1,
@@ -75,7 +74,6 @@ class ASVspoof2019(Dataset):
         }
         self.label = {"spoof": 1, "bonafide": 0}
 
-        # ---------------- model / sample_rate -----
         if hasattr(hubert_source, "get_model"):
             # bundle
             self.model = hubert_source.get_model().eval()
@@ -125,12 +123,10 @@ class ASVspoof2019(Dataset):
 
         return feats, utt_id, self.tag[tag], self.label[label]
 
-    # --------------------------------------------
     def collate_fn(self, batch):
         return default_collate(batch)
 
 
-# ---------------------- quick test -------------------------------------------
 if __name__ == "__main__":
     proto = r"E:\\akademikcalismalar\\POST\\DeepFakeAudio\\DATASETLER\\ASV2019\\LA\\ASVspoof2019_LA_cm_protocols"
     audio_root = r"E:\\akademikcalismalar\\POST\\DeepFakeAudio\\DATASETLER\\ASV2019\\LA\\ASVspoof2019_LA_train\\flac"
@@ -144,3 +140,4 @@ if __name__ == "__main__":
     )
     x, uid, t, l = ds[0]
     print(x.shape, uid, t, l)
+
