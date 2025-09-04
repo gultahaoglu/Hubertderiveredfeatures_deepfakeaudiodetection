@@ -1,14 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Embedding‑level fusion training script
-Created on Fri Jul  4 2025
-
-This version replaces *feature‑level* fusion with *embedding‑level* fusion.
-Each acoustic feature stream (e.g. HuBERT‑LARGE, HuBERT‑XLARGE) is first fed
-through its **own** ECAPA‑TDNN backbone to obtain an embedding. The resulting
-embeddings are L2‑normalised, concatenated (or averaged), and finally passed
-through a classifier.
-"""
 
 from __future__ import annotations
 import os, json, argparse, shutil, warnings
@@ -32,12 +21,7 @@ warnings.filterwarnings("ignore")
 # --------------------------------------------------------------------------- #
 
 class MultiFeatureDataset(Dataset):
-    """Loads N feature streams (HuBERT / WavLM / …) without early fusion.
 
-    During *getitem* we return a **list** of feature tensors rather than a single
-    concatenated tensor so that fusion can take place after the backbone
-    (embedding‑level fusion).
-    """
 
     def __init__(
         self,
@@ -75,7 +59,7 @@ class MultiFeatureDataset(Dataset):
         ]
         self.Cs = [x.shape[0] for x in sample_feats]  # list of channel dims
 
-    # ------------------------------------------------------------------ #
+ 
     def _feat_path(self, root: Path, utt_id: str) -> Path:
         return root / self.access_type / self.part / f"{utt_id}.pt"
 
@@ -94,7 +78,6 @@ class MultiFeatureDataset(Dataset):
             x = torch.cat([x, pad], dim=1)
         return x
 
-    # -------------------------------------------------------------- #
     def __len__(self):
         return len(self.items)
 
@@ -114,9 +97,7 @@ class MultiFeatureDataset(Dataset):
         labels = torch.tensor(labels, dtype=torch.long)
         return feats_stacked, utt_ids, labels
 
-# --------------------------------------------------------------------------- #
-#                              MODEL                                          #
-# --------------------------------------------------------------------------- #
+
 
 class ECAPABackbone(nn.Module):
     """Wrapper around SpeechBrain's ECAPA‑TDNN that expects input (B, C, T)."""
@@ -178,9 +159,7 @@ class EmbeddingFusionModel(nn.Module):
         logits = self.classifier(emb)
         return emb, logits
 
-# --------------------------------------------------------------------------- #
-#                              ARGUMENTS                                      #
-# --------------------------------------------------------------------------- #
+
 PARAMS = {
     "access_type": "LA",
     "paths_to_features": [
@@ -245,9 +224,7 @@ def init_params() -> argparse.Namespace:
     p.add_argument("--continue_training", action="store_true")
     return p.parse_args()
 
-# --------------------------------------------------------------------------- #
-#                        TRAIN / VALIDATE                                    #
-# --------------------------------------------------------------------------- #
+
 
 def adjust_lr(optimizer, base_lr, decay, interval, epoch):
     for g in optimizer.param_groups:
@@ -339,7 +316,7 @@ def train(args):
             opt_model.step()
             if opt_aux: opt_aux.step()
 
-        # ----------------- validation ---------------- #
+
         model.eval()
         scores, ys, val_losses = [], [], []
         with torch.no_grad():
@@ -388,3 +365,4 @@ def train(args):
 if __name__ == "__main__":
     args = init_params() if not PARAMS else argparse.Namespace(**PARAMS)
     train(args)
+
