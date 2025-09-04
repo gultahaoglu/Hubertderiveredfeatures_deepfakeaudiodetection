@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May  7 01:49:00 2025
-
-@author: ADMIN
-"""
-
-
-
 from __future__ import annotations
 import os, json, argparse, shutil, warnings
 from pathlib import Path
@@ -25,12 +16,8 @@ from loss import AMSoftmax, OCSoftmax, setup_seed
 
 warnings.filterwarnings("ignore")
 
-# --------------------------------------------------------------------------- #
-#                              DATASET                                        #
-# --------------------------------------------------------------------------- #
 
-
-class ECAPABackbone(nn.Module):  # NEW (artık local değil)
+class ECAPABackbone(nn.Module):
     def __init__(self, in_dim: int, emb_dim: int = 192):
         super().__init__()
         from speechbrain.lobes.models.ECAPA_TDNN import ECAPA_TDNN
@@ -42,7 +29,7 @@ class ECAPABackbone(nn.Module):  # NEW (artık local değil)
         return x.squeeze(1)                     # → (B, emb_dim)
 
 
-def build_ecapa(                               # CHANGED
+def build_ecapa(                            
     input_dim: int,
     num_classes: int = 2,
     emb_dim: int = 192,
@@ -129,14 +116,8 @@ class MultiFeatureDataset(Dataset):
         labels = torch.tensor(labels, dtype=torch.long)
         return feats, utt_ids, labels
 
-# --------------------------------------------------------------------------- #
-#                              MODEL                                          #
-# --------------------------------------------------------------------------- #
 
-# --------------------------------------------------------------------------- #
-#                              ARGUMENTS                                      #
-# --------------------------------------------------------------------------- #
-PARAMS = {              # <-- ihtiyacınız olan bütün argümanlar
+PARAMS = {          
     "access_type": "LA",
     "paths_to_features": [
 
@@ -206,9 +187,6 @@ def init_params() -> argparse.Namespace:
     p.add_argument("--continue_training", action="store_true")
     return p.parse_args()
 
-# --------------------------------------------------------------------------- #
-#                        TRAIN / VALIDATE (unchanged)                         #
-# --------------------------------------------------------------------------- #
 def adjust_lr(optimizer, base_lr, decay, interval, epoch):
     for g in optimizer.param_groups:
         g["lr"] = base_lr * (decay ** (epoch // interval))
@@ -271,7 +249,7 @@ def train(args):
 
     best_eer, patience = 1e9, 0
     for epoch in range(args.num_epochs):
-        # ----------------- training ----------------- #
+
         model.train()
         adjust_lr(opt_model, args.lr, args.lr_decay, args.interval, epoch)
         if opt_aux: adjust_lr(opt_aux, args.lr, args.lr_decay, args.interval, epoch)
@@ -300,7 +278,7 @@ def train(args):
             opt_model.step()
             if opt_aux: opt_aux.step()
 
-        # ----------------- validation ---------------- #
+
         model.eval()
         scores, ys, val_losses = [], [], []
         with torch.no_grad():
@@ -350,3 +328,4 @@ if __name__ == "__main__":
     args = init_params() if not PARAMS else argparse.Namespace(**PARAMS)
 
     train(args)
+
