@@ -14,17 +14,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-import eval_metrics as em                 # aynı depodaki eval_metrics.py
-from loss import AMSoftmax, OCSoftmax     # mevcut loss implementasyonları
+import eval_metrics as em               
+from loss import AMSoftmax, OCSoftmax    
 
 import warnings
 warnings.filterwarnings("ignore")
 
-# -----------------------------------------------------------------------------
-# Utils
-# -----------------------------------------------------------------------------
+
 def setup_seed(seed: int = 42) -> None:
-    """Tüm rastgelelik kaynaklarını sabitleyerek tekrarlanabilirlik sağlar."""
+
     import random
     import numpy as np
     import torch.backends.cudnn as cudnn
@@ -38,19 +36,17 @@ def setup_seed(seed: int = 42) -> None:
     cudnn.benchmark = False
 
 
-# -----------------------------------------------------------------------------
-# Dataset
-# -----------------------------------------------------------------------------
+
 class WavLMFeatureDataset(Dataset):
-    """ASVspoof-2019 WavLM özelliklerini yükler."""
+  
     def __init__(
         self,
         access_type: str,
         feat_root: str | Path,
         protocol_dir: str | Path,
-        part: str,                         # train / dev / eval
+        part: str,                        
         feat_len: int = 750,
-        padding: str = "repeat",           # repeat | zero
+        padding: str = "repeat",          
     ):
         super().__init__()
         self.access_type = access_type
@@ -74,15 +70,14 @@ class WavLMFeatureDataset(Dataset):
         sample_feat = torch.load(self._feat_path(self.items[0][0]), map_location="cpu")
         self.C = sample_feat.shape[0]
 
-    # ------------------------------------------------------------------
     def _feat_path(self, utt_id: str) -> Path:
         return self.feat_root / self.access_type / self.part / f"{utt_id}.pt"
 
-    # ------------------------------------------------------------------
+
     def __len__(self):
         return len(self.items)
 
-    # ------------------------------------------------------------------
+
     def _pad(self, x: torch.Tensor) -> torch.Tensor:
         T = x.shape[1]
         if T == self.feat_len:
@@ -100,7 +95,6 @@ class WavLMFeatureDataset(Dataset):
             raise ValueError(self.padding)
         return torch.cat([x, pad], dim=1)
 
-    # ------------------------------------------------------------------
     def __getitem__(self, idx: int):
         utt_id, label = self.items[idx]
         feat = torch.load(self._feat_path(utt_id), map_location="cpu")  # (C,T)
@@ -115,9 +109,6 @@ class WavLMFeatureDataset(Dataset):
         return feats, utt_ids, labels
 
 
-# -----------------------------------------------------------------------------
-# MODEL
-# -----------------------------------------------------------------------------
 class ECAPABackbone(nn.Module):  # NEW (artık local değil)
     def __init__(self, in_dim: int, emb_dim: int = 192):
         super().__init__()
@@ -140,9 +131,7 @@ def build_ecapa(                               # CHANGED
     return nn.Sequential(backbone, nn.ReLU(), classifier)
 
 
-# -----------------------------------------------------------------------------
-# Forward helper
-# -----------------------------------------------------------------------------
+
 def forward(model: nn.Module, feats: torch.Tensor):
     """Returns embedding (B, emb_dim) and logits (B, num_classes)."""
     embedding = model[0](feats)                 # Backbone
@@ -151,9 +140,7 @@ def forward(model: nn.Module, feats: torch.Tensor):
     return embedding, logits
 
 
-# -----------------------------------------------------------------------------
-# Training
-# -----------------------------------------------------------------------------
+
 def adjust_lr(optimizer, base_lr: float, decay: float, interval: int, epoch: int):
     lr = base_lr * (decay ** (epoch // interval))
     for g in optimizer.param_groups:
@@ -201,7 +188,7 @@ def train(args):
     (args.out_fold / "checkpoint").mkdir(parents=True, exist_ok=True)
 
     for epoch in range(args.num_epochs):
-        # ---------------- TRAIN ----------------
+
         model.train()
         adjust_lr(opt_model, args.lr, args.lr_decay, args.interval, epoch)
         if opt_aux is not None:
@@ -237,7 +224,7 @@ def train(args):
         with (args.out_fold / "train_loss.log").open("a") as fp:
             fp.write(f"{epoch}\t{np.mean(train_loss_meter[args.add_loss])}\n")
 
-        # ---------------- DEV -----------------
+
         model.eval()
         dev_loss_meter = []
         scores, labels_all = [], []
@@ -275,12 +262,12 @@ def train(args):
 
         print(f"Epoch {epoch+1}: EER={eer:.4f}")
 
-        # --------------- checkpoint ------------
+
         torch.save(model, args.out_fold / "checkpoint" / f"ecapa_model_{epoch+1}.pt")
         if aux_loss_fn is not None:
             torch.save(aux_loss_fn, args.out_fold / "checkpoint" / f"loss_model_{epoch+1}.pt")
 
-        # --------------- best ------------------
+
         if eer < best_eer:
             best_eer = eer
             early_stop = 0
@@ -297,9 +284,7 @@ def train(args):
     return model, aux_loss_fn
 
 
-# -----------------------------------------------------------------------------
-# PARAMS & main
-# -----------------------------------------------------------------------------
+
 PARAMS = {
     "access_type": "LA",
     "path_to_features": r"E:\akademikcalismalar\POST\DeepFakeAudio\DATASETLER\ASV2019Features\HUBERT_LARGE_L8",
@@ -329,3 +314,4 @@ if __name__ == "__main__":
     args = argparse.Namespace(**PARAMS)
     setup_seed(args.seed)
     model, loss_model = train(args)
+
