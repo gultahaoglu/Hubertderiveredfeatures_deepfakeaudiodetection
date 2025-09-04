@@ -16,9 +16,7 @@ from loss import AMSoftmax, OCSoftmax, setup_seed
 
 warnings.filterwarnings("ignore")
 
-# --------------------------------------------------------------------------- #
-#                              DATASET                                        #
-# --------------------------------------------------------------------------- #
+
 
 class MultiFeatureDataset(Dataset):
 
@@ -365,4 +363,5 @@ def train(args):
 if __name__ == "__main__":
     args = init_params() if not PARAMS else argparse.Namespace(**PARAMS)
     train(args)
+
 
