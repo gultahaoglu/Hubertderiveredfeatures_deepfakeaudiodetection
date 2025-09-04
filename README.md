@@ -1,7 +1,7 @@
 # HuBERT-Derived SSL Features and ECAPA-TDNN Matching for Robust Audio Deepfake Detection
 
 This repository contains code for the paper **“HuBERT-Derived SSL Features and ECAPA-TDNN Matching for Robust Audio Deepfake Detection”** 35th IEEE International Workshop on Machine Learning for Signal Processing (MLSP) 2025.  
-We leverage self-supervised **HuBERT** representations and an **ECAPA-TDNN**-based matching head to build a strong and robust audio deepfake detector. Evaluation follows ASVspoof protocols with **EER** and **min-tDCF**.
+We leverage self-supervised **HuBERT** representations and an **ECAPA-TDNN**-based matching head to build a strong and robust audio deepfake detector. Evaluation follows ASVspoof protocols with **EER(%0.20)** and **min-tDCF(0.006)**.
 
 ---
 
