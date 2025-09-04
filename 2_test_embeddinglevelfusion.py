@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-test.py – ECAPA‑TDNN embedding‑level fusion modelinin *eval* testi
-Created on Sat May 10 03:02:00 2025
-"""
+
 
 from pathlib import Path
 from typing import Optional, List
@@ -13,55 +9,43 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-# --------------------------------------------------------------------------
-#  PROJENİZE GÖRE GÜNCELLEYİN  ------------------------------------------------
-# --------------------------------------------------------------------------
-# → Eğitim betiğinizin bulunduğu dosya adına göre düzenleyin
 from train_embeddinglevelfusion import MultiStreamDataset,EmbeddingFusionECAPA          
-from evaluate_tDCF_asvspoof19 import compute_eer_and_tdcf    # (varsa)
-# --------------------------------------------------------------------------
+from evaluate_tDCF_asvspoof19 import compute_eer_and_tdcf   
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
 
-# --------------------------------------------------------------------------
-# -----------------------------  CONFIG  ------------------------------------
-# --------------------------------------------------------------------------
+
 ACCESS_TYPE = "LA"            # "LA" | "PA"
 
-# ❶ **Eğitimdeki sırayla aynı** iki (veya daha fazla) özellik kökü
+
 PATHS_TO_FEATURES: List[str] = [
     r"E:\akademikcalismalar\POST\DeepFakeAudio\DATASETLER\ASV2019Features\HuBERT_LARGE",
     r"E:\akademikcalismalar\POST\DeepFakeAudio\DATASETLER\ASV2019Features\HuBERT_XLARGE",
 ]
 
-# ❷ ASVspoof2019 protokol dizini
+
 PATH_TO_PROTOCOL_DIR = (
     r"E:\akademikcalismalar\POST\DeepFakeAudio\DATASETLER\ASV2019\LA\ASVspoof2019_LA_cm_protocols"
 )
 
-# ❸ Değerlendirme protokol dosyası (tag’ler için)
 EVAL_PROTOCOL_FILE = (
     Path(PATH_TO_PROTOCOL_DIR) / f"ASVspoof2019.{ACCESS_TYPE}.cm.eval.trl.txt"
 ).as_posix()
 
-# ❹ Eğitim çıktılarının bulunduğu klasör
 OUT_FOLD = r".\models\embed_fusionLarge_XLarge"
 
-# ❺ Veri/Yükleyici ayarları
+
 FEAT_LEN    = 750
 PADDING     = "repeat"        # "zero" | "repeat"
 BATCH_SIZE  = 32
 NUM_WORKERS = 4
 
-# ❻ Kayıp fonksiyonu (eğitimde ne kullandıysanız)
+
 ADD_LOSS = "ocsoftmax"        # "softmax" | "amsoftmax" | "ocsoftmax"
 
-# ❼ Cihaz
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-# --------------------------------------------------------------------------
 
-# --------------------  Tag lookup from protocol  ---------------------------
 def _load_tag_lookup(protocol_file: str | Path) -> dict[str, str]:
     lookup = {}
     with Path(protocol_file).open("r") as f:
@@ -73,7 +57,7 @@ def _load_tag_lookup(protocol_file: str | Path) -> dict[str, str]:
 
 _TAG_LOOKUP = _load_tag_lookup(EVAL_PROTOCOL_FILE)
 
-# --------------------------------------------------------------------------
+
 @torch.no_grad()
 def evaluate(model: torch.nn.Module,
              aux_loss_fn: Optional[torch.nn.Module] = None) -> None:
@@ -119,7 +103,7 @@ def evaluate(model: torch.nn.Module,
         prob_bona = (logits if logits.dim() == 1
                      else F.softmax(logits, dim=1)[:, 0])
 
-        # ------------- tag eşlemesi -------------
+
         tag_list = []
         for uid in uids:
             tag = _TAG_LOOKUP.get(uid)
@@ -138,7 +122,7 @@ def evaluate(model: torch.nn.Module,
     scores = torch.cat(scores).numpy()
     labels = torch.cat(labels).numpy()
 
-    # -------------- skor dosyasını kaydet --------------
+
     out_dir = Path(OUT_FOLD)
     out_dir.mkdir(parents=True, exist_ok=True)
     score_fp = out_dir / "eval_scores_with_tags.txt"
@@ -147,14 +131,13 @@ def evaluate(model: torch.nn.Module,
         for uid, tag, lab, score in zip(utt_ids, utt_tags, labels, scores):
             fp.write(f"{uid} {tag} {'spoof' if lab else 'bonafide'} {score:.6f}\n")
 
-    # -------------- EER / tDCF (label varsa) -----------
     try:
         eer_cm, min_tDCF = compute_eer_and_tdcf(score_fp)
         print(f"[Eval]  EER = {eer_cm:.4f}\t min‑tDCF = {min_tDCF:.4f}")
     except Exception:
         print("[Eval]  Label bilgisi yok – EER/tDCF atlandı.")
 
-# --------------------------------------------------------------------------
+
 def main() -> None:
     global DEVICE
     DEVICE = torch.device(DEVICE)
@@ -173,6 +156,7 @@ def main() -> None:
 
     evaluate(model, loss_model)
 
-# --------------------------------------------------------------------------
+
 if __name__ == "__main__":
     main()
+
