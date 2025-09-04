@@ -52,7 +52,6 @@ class ASVspoof2019(Dataset):
         self.path_to_audio = Path(path_to_audio)
         self.path_to_protocol = Path(path_to_protocol)
 
-        # ---------------- protocol ----------------
         proto = self.path_to_protocol / f"ASVspoof2019.{access_type}.cm.{part}.trl.txt"
         with proto.open("r", encoding="utf8") as f:
             all_info = [ln.strip().split() for ln in f]
@@ -85,11 +84,10 @@ class ASVspoof2019(Dataset):
         for p in self.model.parameters():
             p.requires_grad_(False)
 
-    # --------------------------------------------
     def __len__(self):
         return len(self.all_info)
 
-    # --------------------------------------------
+    
     @torch.inference_mode()
     def _extract(self, wav: torch.Tensor):
         feats, _ = self.model.extract_features(wav)
@@ -99,7 +97,6 @@ class ASVspoof2019(Dataset):
             h = h[:, :T].view(h.shape[0], -1, self.downsample).mean(-1)
         return h
 
-    # --------------------------------------------
     def __getitem__(self, idx):
         speaker, utt_id, _, tag, label = self.all_info[idx]
         wav_fp = self.path_to_audio / f"{utt_id}.flac"
@@ -140,4 +137,5 @@ if __name__ == "__main__":
     )
     x, uid, t, l = ds[0]
     print(x.shape, uid, t, l)
+
 
