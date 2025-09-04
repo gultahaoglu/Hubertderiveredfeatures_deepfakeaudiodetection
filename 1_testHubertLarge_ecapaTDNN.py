@@ -1,6 +1,4 @@
-# --------------------------------------------------------------------------
-# test_ecapa_eval.py  –  son sürüm
-# --------------------------------------------------------------------------
+
 from pathlib import Path
 from typing import Optional, List
 import logging, warnings, inspect
@@ -158,3 +156,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
