@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon May 12 00:39:30 2025 — revised May 12 2025
-
-@author: ADMIN
 
 Score‑fusion utilities for spoof‑detection systems.
 
@@ -13,28 +10,6 @@ Supported fusion techniques
 3. **LOGREG** – Logistic‑regression calibration / linear fusion
 4. **DE**    – Differential Evolution (SciPy) on the weight simplex
 
-**NEW**: The script now **saves the fused scores** in the *same utterance order*
-as the first input score file. Use the ``--out-file`` flag to set the path
-(default: ``fused_scores.txt``).
-
-Quick examples
---------------
-```bash
-# Mean fusion, write to default fused_scores.txt
-python score_fusion.py
-
-# PSO fusion and save to custom path
-python score_fusion.py --method pso --out-file results/pso_fused.txt \
-                       scores/sys1.txt scores/sys2.txt
-```
-
-Output file format matches the original (``utt_id tag label score``), with the
-*tag* copied from the first input file and *score* replaced by the fused score.
-
-Dependencies
-------------
-* Mandatory: ``numpy`` ≥1.20, your local ``eval_metrics.compute_eer`` function.
-* Optional  : ``scipy`` ≥1.7  (*required* for *logreg* with SciPy and for *de*).
 """
 
 from __future__ import annotations
@@ -58,9 +33,6 @@ DEFAULT_SCORE_FILES: list[str] = [
 ]
 DEFAULT_OUT_PATH = "models/fused_scoresBase_Large-pso.txt"
 
-###############################################################################
-# File I/O
-###############################################################################
 
 def load_scores(score_file: str | Path) -> dict[str, Tuple[float, int]]:
     """Load ASVspoof‑format score file: ``utt_id tag label score`` (tag ignored)."""
@@ -82,9 +54,7 @@ def write_fused_scores(template_score_file: str | Path, fused_dict: dict[str, Tu
             fused_score = fused_dict[utt_id][0]
             fout.write(f"{utt_id} {tag} {label_str} {fused_score:.6f}\n")
 
-###############################################################################
-# Generic helpers
-###############################################################################
+
 def pso_optimize_weights(
     score_dicts: List[dict],
     num_particles: int = 30,
@@ -155,12 +125,7 @@ def fuse_scores_weighted(score_dicts: List[dict], weights: np.ndarray) -> dict[s
         fused[utt_id] = (float(ws), score_dicts[0][utt_id][1])
     return fused
 
-###############################################################################
-# Fusion techniques
-###############################################################################
-###############################################################################
-# Differential‑Evolution optimisation
-###############################################################################
+
 def de_optimize_weights(
     score_dicts: List[dict],
     max_evals: int = 5000,
@@ -207,9 +172,7 @@ def mean_weights(n: int) -> np.ndarray:
 # PSO, LOGREG, DE implementations unchanged (omitted for brevity in this comment)
 # ... (keep the same bodies as previous revision) ...
 
-###############################################################################
-# CLI
-###############################################################################
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Spoof‑score fusion toolkit")
@@ -222,9 +185,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=42, help="Random seed")
     return p.parse_args()
 
-###############################################################################
-# Main
-###############################################################################
 
 def main() -> None:
     args = parse_args()
@@ -276,4 +236,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         sys.exit(130)
+
     
