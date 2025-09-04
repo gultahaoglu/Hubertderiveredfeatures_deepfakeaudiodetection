@@ -1,6 +1,4 @@
-# --------------------------------------------------------------------------
-# test_feature_fusion_eval.py   –   feature-level fusion ECAPA-TDNN testi
-# --------------------------------------------------------------------------
+
 from pathlib import Path
 from typing import Optional
 import logging, warnings, inspect
@@ -14,9 +12,7 @@ from evaluate_tDCF_asvspoof19 import compute_eer_and_tdcf
 warnings.filterwarnings("ignore")
 logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
 
-# --------------------------------------------------------------------------
-# CONFIG
-# --------------------------------------------------------------------------
+
 ACCESS_TYPE = "LA"
 
 PATHS_TO_FEATURES = [
@@ -41,22 +37,18 @@ DEVICE     = "cuda"
 
 UTT_COL_INDEX = 1
 TAG_COL_INDEX = 3
-# --------------------------------------------------------------------------
 
-# ----- kendi modülünüzden importlar ---------------------------------------
-from train_FeatureLevelFusion import (          # <--  eğitimi yürüttüğünüz dosya
+from train_FeatureLevelFusion import (          
     MultiFeatureDataset,
     forward,
     ECAPABackbone,
 )
 import eval_metrics as em  # noqa: F401
 
-# --------------------------------------------------------------------------
-# 1) Pickle alias – torch.load öncesi
+
 import __main__ as _main
 setattr(_main, "ECAPABackbone", ECAPABackbone)
 
-# 2) eval_metrics sarma (4 değer → 3 değer)
 if len(inspect.signature(em.obtain_asv_error_rates).parameters) == 4:
     _orig_fn = em.obtain_asv_error_rates
     def _wrapper(target, nontarget, spoof, thr):
@@ -64,7 +56,6 @@ if len(inspect.signature(em.obtain_asv_error_rates).parameters) == 4:
     em.obtain_asv_error_rates = _wrapper
     logging.info("eval_metrics.obtain_asv_error_rates wrapped for 3-value compatibility")
 
-# --------------------------------------------------------------------------
 def _load_tag_lookup(protocol_file: str | Path) -> dict[str, str]:
     lookup = {}
     with Path(protocol_file).open("r", encoding="utf-8") as fh:
@@ -78,7 +69,6 @@ def _load_tag_lookup(protocol_file: str | Path) -> dict[str, str]:
 
 _TAG_LOOKUP = _load_tag_lookup(EVAL_PROTOCOL_FILE)
 
-# --------------------------------------------------------------------------
 @torch.no_grad()
 def evaluate(model: torch.nn.Module,
              aux_loss_fn: Optional[torch.nn.Module] = None):
@@ -139,7 +129,6 @@ def evaluate(model: torch.nn.Module,
         eer   = em.compute_eer(bona, spoof)[0]
         print(f"[Eval] Yalnızca CM-EER = {eer:.4f}")
 
-# --------------------------------------------------------------------------
 def main():
     global DEVICE
     DEVICE = torch.device(DEVICE if torch.cuda.is_available() else "cpu")
@@ -162,3 +151,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
